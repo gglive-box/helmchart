@@ -1,0 +1,77 @@
+{{- if .Values.deployment_scheduler -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-{{ .Values.deployment_scheduler.name }}
+  {{- if .Values.reloader }}
+  annotations:
+    reloader.stakater.com/auto: "true"
+  {{- end }}
+
+spec:
+  {{- if not .Values.deployment_scheduler.autoscaling.enable }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-{{ .Values.deployment_scheduler.name }}
+      tier: {{ .Values.deployment_scheduler.name }}
+      track: {{ .Values.deployment_scheduler.track }}
+
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-{{ .Values.deployment_scheduler.name }}
+        tier: {{ .Values.deployment_scheduler.name }}
+        track: {{ .Values.deployment_scheduler.track }}
+    spec:
+      containers:
+        - name: {{ .Release.Name }}-{{ .Values.deployment_scheduler.name }}  
+          {{- if .Values.image }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          {{- end }}
+          {{- if .Values.core_scheduler }}
+          image: "{{ .Values.core_scheduler.image }}:{{ .Values.core_scheduler.tag}}"
+          {{- end }}
+          {{- if .Values.deployment_scheduler.command }}
+          command: {{ .Values.deployment_scheduler.command }}
+          {{- end }}
+          {{- if .Values.deployment_scheduler.args }}
+          args:  {{ .Values.deployment_scheduler.args }}
+          {{- end }}
+          {{- if .Values.deployment_scheduler.port }}
+          ports:
+            - containerPort: {{ .Values.deployment_scheduler.port }}
+          {{- end }}
+          {{- if .Values.deployment_scheduler.healthcheck }}
+          livenessProbe:
+            {{- toYaml .Values.deployment_scheduler.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.deployment_scheduler.readinessProbe | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.deployment_scheduler.resources | nindent 12 }}
+          {{- if .Values.deployment_scheduler.secretRef }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.deployment_scheduler.secretRef }}
+          {{- end }}
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecrets }}
+
+      {{- if .Values.deployment_scheduler.affinity }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                    - {{ .Release.Name }}-{{ .Values.deployment_scheduler.name }}
+              topologyKey: kubernetes.io/hostname
+      {{- end }}
+
+{{- end }}

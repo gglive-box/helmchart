@@ -1,0 +1,14 @@
+{{- if .Values.service_worker }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-{{ .Values.service_worker.name }}
+spec:
+  type: {{ .Values.service_worker.service_type }}
+  ports:
+    - protocol: TCP
+      port: {{ .Values.service_worker.port }}
+      targetPort: {{ .Values.service_worker.targetPort }}
+  selector:
+    app: {{ .Release.Name }}-{{ .Values.deployment_worker.name }}
+{{- end }}

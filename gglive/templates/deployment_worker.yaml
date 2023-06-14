@@ -1,0 +1,76 @@
+{{- if .Values.deployment_worker -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-{{ .Values.deployment_worker.name }}
+  {{- if .Values.reloader }}
+  annotations:
+    reloader.stakater.com/auto: "true"
+  {{- end }}
+
+spec:
+  {{- if not .Values.deployment_worker.autoscaling.enable }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-{{ .Values.deployment_worker.name }}
+      tier: {{ .Values.deployment_worker.name }}
+      track: {{ .Values.deployment_worker.track }}
+
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-{{ .Values.deployment_worker.name }}
+        tier: {{ .Values.deployment_worker.name }}
+        track: {{ .Values.deployment_worker.track }}
+    spec:
+      containers:
+        - name: {{ .Release.Name }}-{{ .Values.deployment_worker.name }}  
+          {{- if .Values.image }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          {{- end }}
+          {{- if .Values.core_worker }}
+          image: "{{ .Values.core_worker.image }}:{{ .Values.core_worker.tag}}"
+          {{- end }}
+          {{- if .Values.deployment_worker.command }}
+          command: {{ .Values.deployment_worker.command }}
+          {{- end }}
+          {{- if .Values.deployment_worker.args }}
+          args:  {{ .Values.deployment_worker.args }}
+          {{- end }}
+          {{- if .Values.deployment_worker.port }}
+          ports:
+            - containerPort: {{ .Values.deployment_worker.port }}
+          {{- end }}
+          {{- if .Values.deployment_worker.healthcheck }}
+          livenessProbe:
+            {{- toYaml .Values.deployment_worker.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.deployment_worker.readinessProbe | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.deployment_worker.resources | nindent 12 }}
+          {{- if .Values.deployment_worker.secretRef }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.deployment_worker.secretRef }}
+          {{- end }}
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecrets }}
+
+      {{- if .Values.deployment_worker.affinity }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                    - {{ .Release.Name }}-{{ .Values.deployment_worker.name }}
+              topologyKey: kubernetes.io/hostname
+      {{- end }}
+{{- end }}

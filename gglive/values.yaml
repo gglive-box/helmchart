@@ -1,0 +1,183 @@
+# Default values for gglivedev_event-hook.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+imagePullSecrets: harbor-secret-registry
+replicaCount: 1
+image:
+  repository: registry.vn/box/services
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "stg"
+# Reloader to true if k8s installed stakater reloader and you want reload deployment if secretRef was changed
+reloader: True
+deployment_api:
+  affinity: true
+# Enable HPA if autoscaling enable is True
+#   autoscaling: 
+#      enable: True
+#   minReplicas: 2
+#   maxReplicas: 10
+#   targetMemory: 320Mi
+#   targetCPUUtilizationPercentage: 90
+  autoscaling: 
+    enable: false
+  # Declare name service of deployment
+  name: api
+  # Declare track of deployment
+  track: stable
+  # Declare port number  exposed by pod
+  port: 9000
+  # Declare name secretRef
+  secretRef: svc-config
+  # Enable/ Disable healthcheck
+  healthcheck: True
+  resources:
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+    limits:
+      memory: "350Mi"
+    requests:
+      memory: "100Mi"
+      cpu: "50m"
+  # Liveness probe checks the container health as we tell it do, 
+  # and if for some reason the liveness probe fails, it restarts the container
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 9000
+    initialDelaySeconds: 10
+    timeoutSeconds: 5
+    periodSeconds: 20
+  # Readiness use when we would like our application to be alive, 
+  # but not serve traffic unless some conditions are met e.g, 
+  # populating a dataset, waiting for some other service to be alive etc
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 9000
+    initialDelaySeconds: 10
+    timeoutSeconds: 5
+    periodSeconds: 10
+
+deployment_worker: 
+  affinity: true
+  autoscaling: 
+    enable: false
+  # Declare name service of deployment
+  name: worker
+  track: stable
+  port: 9000
+  secretRef: svc-config
+  healthcheck: false
+  resources:
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+    limits:
+      memory: "350Mi"
+    requests:
+      memory: "120Mi"
+      cpu: "50m"
+
+deployment_scheduler:
+  autoscaling: 
+    enable: false
+  name: scheduler
+  track: stable
+  port: 9000
+  secretRef: svc-config
+  healthcheck: true
+  resources:
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+    limits:
+      memory: "350Mi"
+    requests:
+      memory: "50Mi"
+      cpu: "50m"
+  # Liveness probe checks the container health as we tell it do, 
+  # and if for some reason the liveness probe fails, it restarts the container
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 9000
+    initialDelaySeconds: 10
+    timeoutSeconds: 5
+    periodSeconds: 20
+  # Readiness use when we would like our application to be alive, 
+  # but not serve traffic unless some conditions are met e.g, 
+  # populating a dataset, waiting for some other service to be alive etc
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 9000
+    initialDelaySeconds: 10
+    timeoutSeconds: 5
+    periodSeconds: 10
+
+# Declare service
+service_api:
+# Declare name of service
+  name: "api"
+# Declare name service type of service: ClusterIP, Nodeport, Loadbalance
+  service_type: ClusterIP
+# Declare port number expose by service
+  port: 10001
+# Declare port number expose by pod
+  targetPort: 9000
+
+service_worker:
+  name: "worker"
+  service_type: ClusterIP
+  port: 9000
+  targetPort: 9000
+
+service_scheduler:
+  name: "scheduler"
+  service_type: ClusterIP
+  port: 10002
+  targetPort: 9000
+
+
+
+# Declare ingress
+ingress_api:
+# Enable/disable ingress
+  enable: true
+  name: "read"
+# Declare annotations of ingress
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+# Declare tls of ingress
+  tls:
+  - secretName: ing-tls
+    hosts:
+      - api.domain
+# Declare hosts of ingress
+  hosts:
+    - host: api.domain
+      paths:
+        - path: "/api/svc/v1.0(/|$)(.*)"
+          pathType: Prefix
+
+ingress_worker:
+  enable: false
+
+ingress_scheduler:
+  enable: false
+
+externalSecret:
+  - name: svc-config
+    refreshInterval: 5s
+    dataFrom: /svc-config
+    secretStoreRef: svc-stg-vault

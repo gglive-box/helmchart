@@ -1,0 +1,14 @@
+{{- if .Values.service_scheduler }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-{{ .Values.service_scheduler.name }}
+spec:
+  type: {{ .Values.service_scheduler.service_type }}
+  ports:
+    - protocol: TCP
+      port: {{ .Values.service_scheduler.port }}
+      targetPort: {{ .Values.service_scheduler.targetPort }}
+  selector:
+    app: {{ .Release.Name }}-{{ .Values.deployment_scheduler.name }}
+{{- end }}
