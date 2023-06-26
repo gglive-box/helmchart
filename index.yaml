@@ -3,12 +3,12 @@ entries:
   gglive:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2023-06-26T14:28:28.848343+07:00"
+    created: "2023-06-26T14:50:49.166537+07:00"
     description: A Helm chart for GGlive
-    digest: bb4cde6630aeebbe206ee624b96ff592cd637edefcca3b73e0a0d36a8be88db3
+    digest: 49c3d15ad86b509ae6d8b7467d9d171a6eb2ffa8974eab3cedc3dac673b97382
     name: gglive
     type: application
     urls:
     - https://gglive-box.github.io/helmchart/gglive-0.1.1.tgz
     version: 0.1.1
-generated: "2023-06-26T14:28:28.847468+07:00"
+generated: "2023-06-26T14:50:49.163753+07:00"
