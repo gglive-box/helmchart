@@ -1,21 +1,21 @@
 
-{{- if .Values.ingress_worker }}
+{{- if .Values.ingress_api }}
 {{- $release_name := .Release.Name -}}
-{{- $deployment_worker := .Values.deployment_worker.name -}}
-{{- $svcPort := .Values.service_worker.port -}}
+{{- $deployment_external_api := .Values.deployment_external_api.name -}}
+{{- $svcPort := .Values.service_external_api.port -}}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ .Release.Name }}-{{ .Values.ingress_worker.name }}
-  {{- with .Values.ingress_worker.annotations }}
+  name: {{ .Release.Name }}-{{ .Values.ingress_api.name }}
+  {{- with .Values.ingress_api.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  {{- if .Values.ingress_worker.tls }}
+  {{- if .Values.ingress_api.tls }}
   tls:
-    {{- range .Values.ingress_worker.tls }}
+    {{- range .Values.ingress_api.tls }}
     - hosts:
         {{- range .hosts }}
         - {{ . | quote }}
@@ -25,7 +25,7 @@ spec:
   {{- end }}
 
   rules:
-    {{- range .Values.ingress_worker.hosts }}
+    {{- range .Values.ingress_api.hosts }}
     - host: {{ .host | quote }}
       http:
         paths:
@@ -34,7 +34,7 @@ spec:
             pathType: {{ .pathType }}
             backend:
               service:
-                name:  {{  $release_name }}-{{  $deployment_worker }}
+                name:  {{  $release_name }}-{{  $deployment_external_api }}
                 port:
                   number: {{  $svcPort }}
           {{- end }}

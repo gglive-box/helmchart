@@ -1,5 +1,5 @@
 
-{{- if .Values.ingress_api.enable -}}
+{{- if .Values.ingress_api }}
 {{- $release_name := .Release.Name -}}
 {{- $deployment_api := .Values.deployment_api.name -}}
 {{- $svcPort := .Values.service_api.port -}}

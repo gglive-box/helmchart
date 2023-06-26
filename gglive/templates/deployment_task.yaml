@@ -1,0 +1,92 @@
+{{- if .Values.deployment_task }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-{{ .Values.deployment_task.name }}
+  {{- if .Values.reloader }}
+  annotations:
+    reloader.stakater.com/auto: "true"
+  {{- end }}
+
+spec:
+  {{- if not .Values.deployment_task.autoscaling.enable }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-{{ .Values.deployment_task.name }}
+      tier: {{ .Values.deployment_task.name }}
+      track: {{ .Values.deployment_task.track }}
+
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-{{ .Values.deployment_task.name }}
+        tier: {{ .Values.deployment_task.name }}
+        track: {{ .Values.deployment_task.track }}
+    spec:
+      containers:
+        - name: {{ .Release.Name }}-{{ .Values.deployment_task.name }}
+          {{- if .Values.image }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          {{- end }}
+          {{- if .Values.core_task }}
+          image: "{{ .Values.core_task.image }}:{{ .Values.core_task.tag}}"
+          {{- end }}
+          {{- if .Values.deployment_task.command }}
+          command: {{ .Values.deployment_task.command }}
+          {{- end }}
+          {{- if .Values.deployment_task.args }}
+          args:  {{ .Values.deployment_task.args }}
+          {{- end }}
+          {{- if .Values.deployment_task.port }}
+          ports:
+            - containerPort: {{ .Values.deployment_task.port }}
+          {{- end }}
+          {{- if .Values.deployment_task.healthcheck }}
+          livenessProbe:
+            {{- toYaml .Values.deployment_task.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.deployment_task.readinessProbe | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.deployment_task.resources | nindent 12 }}
+          {{- if .Values.deployment_task.secretRef }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.deployment_task.secretRef }}
+          {{- end }}
+          {{- if .Values.deployment_task.volumeMounts }}
+          volumeMounts:
+            {{- range .Values.deployment_task.volumeMounts }}
+            - mountPath: {{ .mountPath }}
+              name: {{ .name }}
+              subPath: {{ .subPath }}
+            {{- end }}
+          {{- end }}
+      {{- if .Values.deployment_task.volumes }}
+      volumes:
+        {{- range .Values.deployment_task.volumes }}
+        - name: {{ .name }}
+          secretRef:
+            name: {{ .secretRef.name }}
+        {{- end }}
+      {{- end }}
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecrets }}
+
+      {{- if .Values.deployment_task.affinity }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                    - {{ .Release.Name }}-{{ .Values.deployment_task.name }}
+              topologyKey: kubernetes.io/hostname
+      {{- end }}
+{{- end }}

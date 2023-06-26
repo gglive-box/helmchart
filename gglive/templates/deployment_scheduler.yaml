@@ -1,4 +1,4 @@
-{{- if .Values.deployment_scheduler -}}
+{{- if .Values.deployment_scheduler }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:

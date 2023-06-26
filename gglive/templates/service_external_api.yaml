@@ -1,0 +1,14 @@
+{{- if .Values.service_external_api }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-{{ .Values.service_external_api.name }}
+spec:
+  type: {{ .Values.service_external_api.service_type }}
+  ports:
+    - protocol: TCP
+      port: {{ .Values.service_external_api.port }}
+      targetPort: {{ .Values.service_external_api.targetPort }}
+  selector:
+    app: {{ .Release.Name }}-{{ .Values.deployment_external_api.name }}
+{{- end }}

@@ -1,3 +1,4 @@
+{{- if .Values.deployment_api }}
 {{- if .Values.deployment_api.autoscaling.enable }}
 ---
 apiVersion: autoscaling/v2beta1
@@ -25,4 +26,5 @@ spec:
         name: cpu
         targetAverageUtilization: {{ .Values.deployment_api.autoscaling.targetCPUUtilizationPercentage }}
     {{- end }}
+{{- end }}
 {{- end }}

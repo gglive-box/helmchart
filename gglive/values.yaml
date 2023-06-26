@@ -170,12 +170,6 @@ ingress_api:
         - path: "/api/svc/v1.0(/|$)(.*)"
           pathType: Prefix
 
-ingress_worker:
-  enable: false
-
-ingress_scheduler:
-  enable: false
-
 externalSecret:
   - name: svc-config
     refreshInterval: 5s

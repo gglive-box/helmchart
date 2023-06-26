@@ -1,0 +1,92 @@
+{{- if .Values.deployment_external_api }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-{{ .Values.deployment_external_api.name }}
+  {{- if .Values.reloader }}
+  annotations:
+    reloader.stakater.com/auto: "true"
+  {{- end }}
+
+spec:
+  {{- if not .Values.deployment_external_api.autoscaling.enable }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-{{ .Values.deployment_external_api.name }}
+      tier: {{ .Values.deployment_external_api.name }}
+      track: {{ .Values.deployment_external_api.track }}
+
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-{{ .Values.deployment_external_api.name }}
+        tier: {{ .Values.deployment_external_api.name }}
+        track: {{ .Values.deployment_external_api.track }}
+    spec:
+      containers:
+        - name: {{ .Release.Name }}-{{ .Values.deployment_external_api.name }}
+          {{- if .Values.image }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          {{- end }}
+          {{- if .Values.core_external_api }}
+          image: "{{ .Values.core_external_api.image }}:{{ .Values.core_external_api.tag}}"
+          {{- end }}
+          {{- if .Values.deployment_external_api.command }}
+          command: {{ .Values.deployment_external_api.command }}
+          {{- end }}
+          {{- if .Values.deployment_external_api.args }}
+          args:  {{ .Values.deployment_external_api.args }}
+          {{- end }}
+          {{- if .Values.deployment_external_api.port }}
+          ports:
+            - containerPort: {{ .Values.deployment_external_api.port }}
+          {{- end }}
+          {{- if .Values.deployment_external_api.healthcheck }}
+          livenessProbe:
+            {{- toYaml .Values.deployment_external_api.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.deployment_external_api.readinessProbe | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.deployment_external_api.resources | nindent 12 }}
+          {{- if .Values.deployment_external_api.secretRef }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.deployment_external_api.secretRef }}
+          {{- end }}
+          {{- if .Values.deployment_external_api.volumeMounts }}
+          volumeMounts:
+            {{- range .Values.deployment_external_api.volumeMounts }}
+            - mountPath: {{ .mountPath }}
+              name: {{ .name }}
+              subPath: {{ .subPath }}
+            {{- end }}
+          {{- end }}
+      {{- if .Values.deployment_external_api.volumes }}
+      volumes:
+        {{- range .Values.deployment_external_api.volumes }}
+        - name: {{ .name }}
+          secretRef:
+            name: {{ .secretRef.name }}
+        {{- end }}
+      {{- end }}
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecrets }}
+
+      {{- if .Values.deployment_external_api.affinity }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                    - {{ .Release.Name }}-{{ .Values.deployment_external_api.name }}
+              topologyKey: kubernetes.io/hostname
+      {{- end }}
+{{- end }}
